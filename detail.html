@@ -58,7 +58,7 @@ const allowedUsers = [
   "U895d547fe4e9879d2c3fc07d550d83ec"
 ];
 
-let jobId = new URLSearchParams(window.location.search).get("jobId");
+const jobId = new URLSearchParams(window.location.search).get("jobId");
 
 async function init() {
   await liff.init({ liffId: LIFF_ID });
@@ -70,7 +70,6 @@ async function init() {
 
   const profile = await liff.getProfile();
 
-  // ❌ ไม่มีสิทธิ์
   if (!allowedUsers.includes(profile.userId)) {
     document.body.innerHTML = "";
     return;
@@ -83,20 +82,32 @@ async function loadDetail() {
   const res = await fetch(GAS_URL + "?mode=getPending");
   const jobs = await res.json();
 
-  const job = jobs.find(j => j.jobId === jobId);
+  const job = jobs.find(j => String(j.jobId) === String(jobId));
 
   const div = document.getElementById("detail");
+
+  // 🔥 กันหน้าขาว
+  if (!job) {
+    div.innerHTML = "❌ ไม่พบข้อมูลงาน";
+    return;
+  }
 
   div.innerHTML = `
     <h3>🆔 ${job.jobId}</h3>
     <p>${job.description}</p>
     <p>${job.action} / ${job.type}</p>
     <p>${job.area} (${job.location})</p>
-    <p>📅 ${job.dueDate}</p>
+    <p>📅 ${formatDate(job.dueDate)}</p>
 
     <button class="approve" onclick="approve()">Approve</button>
     <button class="reject" onclick="reject()">Reject</button>
   `;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("th-TH");
 }
 
 async function approve() {
@@ -107,7 +118,7 @@ async function approve() {
   });
 
   alert("อนุมัติแล้ว");
-  window.history.back();
+  window.location.href = "approve.html";
 }
 
 async function reject() {
@@ -118,7 +129,7 @@ async function reject() {
   });
 
   alert("ไม่อนุมัติ");
-  window.history.back();
+  window.location.href = "approve.html";
 }
 
 init();
