@@ -102,13 +102,19 @@ async function loadJobs() {
       <div class="title">🆔 ${job.jobId}</div>
       <div class="small">${job.action} / ${job.type}</div>
       <div>${job.description}</div>
-      <div class="small">📅 ${job.dueDate}</div>
+      <div class="small">📅 ${formatDate(job.dueDate)}</div>
     `;
 
     list.appendChild(div);
   });
 }
-
+  
+function formatDate(dateStr) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("th-TH");
+}
+  
 init();
 </script>
 
