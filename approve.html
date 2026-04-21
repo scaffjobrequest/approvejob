@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>อนุมัติงาน</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<style>
+body {
+  font-family: sans-serif;
+  padding: 16px;
+}
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+button {
+  padding: 8px 12px;
+  margin-right: 8px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+}
+
+.approve { background: green; }
+.reject { background: red; }
+</style>
+</head>
+
+<body>
+
+<h2>📋 งานรออนุมัติ</h2>
+
+<div id="list">กำลังโหลด...</div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec";
+
+// 🔥 ใส่ userId ที่อนุญาต
+const allowedUsers = [
+  "U895d547fe4e9879d2c3fc07d550d83ec"
+];
+
+async function init() {
+  await liff.init({ liffId: "ใส่_LIFF_ID" });
+
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
+
+  const profile = await liff.getProfile();
+
+  // 🔥 เช็คสิทธิ์
+  if (!allowedUsers.includes(profile.userId)) {
+    document.body.innerHTML = "❌ คุณไม่มีสิทธิ์ใช้งาน";
+    return;
+  }
+
+  loadJobs();
+}
+
+async function loadJobs() {
+  const res = await fetch(https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec + "?mode=getPending");
+  const jobs = await res.json();
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  if (jobs.length === 0) {
+    list.innerHTML = "ไม่มีงานรออนุมัติ";
+    return;
+  }
+
+  jobs.forEach(job => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <b>🆔 ${job.jobId}</b><br>
+      📌 ${job.description}<br>
+      ⚙️ ${job.action} / ${job.type}<br>
+      👤 ${job.contact}<br>
+      📍 ${job.area} (${job.location})<br>
+      📅 ${job.dueDate}<br>
+      📊 ${job.status}<br><br>
+
+      <button class="approve" onclick="approve('${job.jobId}')">✅ Approve</button>
+      <button class="reject" onclick="reject('${job.jobId}')">❌ Reject</button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+async function approve(jobId) {
+  await fetch(https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      jobId: jobId,
+      action: "Approved"
+    })
+  });
+
+  alert("อนุมัติแล้ว");
+  loadJobs();
+}
+
+async function reject(jobId) {
+  await fetch(https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      jobId: jobId,
+      action: "Rejected"
+    })
+  });
+
+  alert("ไม่อนุมัติ");
+  loadJobs();
+}
+
+init();
+</script>
+
+</body>
+</html>
