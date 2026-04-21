@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>รายละเอียดงาน</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Prompt', sans-serif;
+  background: linear-gradient(135deg, #dbeafe, #fef3c7);
+}
+
+.container {
+  max-width: 420px;
+  margin: auto;
+  padding: 16px;
+}
+
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  color: white;
+}
+
+.approve { background: green; }
+.reject { background: red; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card" id="detail">กำลังโหลด...</div>
+</div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec";
+const LIFF_ID = "2009765392-O6mTRc1m";
+
+const allowedUsers = [
+  "Uxxxxxxxxxxxx"
+];
+
+let jobId = new URLSearchParams(window.location.search).get("jobId");
+
+async function init() {
+  await liff.init({ liffId: LIFF_ID });
+
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
+
+  const profile = await liff.getProfile();
+
+  // ❌ ไม่มีสิทธิ์
+  if (!allowedUsers.includes(profile.userId)) {
+    document.body.innerHTML = "";
+    return;
+  }
+
+  loadDetail();
+}
+
+async function loadDetail() {
+  const res = await fetch(GAS_URL + "?mode=getPending");
+  const jobs = await res.json();
+
+  const job = jobs.find(j => j.jobId === jobId);
+
+  const div = document.getElementById("detail");
+
+  div.innerHTML = `
+    <h3>🆔 ${job.jobId}</h3>
+    <p>${job.description}</p>
+    <p>${job.action} / ${job.type}</p>
+    <p>${job.area} (${job.location})</p>
+    <p>📅 ${job.dueDate}</p>
+
+    <button class="approve" onclick="approve()">Approve</button>
+    <button class="reject" onclick="reject()">Reject</button>
+  `;
+}
+
+async function approve() {
+  await fetch(GAS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ jobId, action: "Approved" })
+  });
+
+  alert("อนุมัติแล้ว");
+  window.history.back();
+}
+
+async function reject() {
+  await fetch(GAS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ jobId, action: "Rejected" })
+  });
+
+  alert("ไม่อนุมัติ");
+  window.history.back();
+}
+
+init();
+</script>
+
+</body>
+</html>
