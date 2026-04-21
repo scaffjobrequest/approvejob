@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>อนุมัติงาน</title>
+<title>รายการงาน</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -14,71 +14,31 @@ body {
   margin: 0;
   font-family: 'Prompt', sans-serif;
   background: linear-gradient(135deg, #dbeafe, #fef3c7);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
 }
 
 .container {
-  width: 100%;
   max-width: 420px;
+  margin: auto;
   padding: 16px;
 }
 
 .card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  cursor: pointer;
 }
 
-h2 {
-  text-align: center;
-  color: #1e40af;
-  margin-bottom: 20px;
-}
-
-.job-title {
+.title {
   font-weight: 600;
   margin-bottom: 6px;
 }
 
-.job-detail {
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.btn-group {
-  margin-top: 12px;
-  display: flex;
-  gap: 8px;
-}
-
-button {
-  flex: 1;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: 'Prompt', sans-serif;
-  color: white;
-}
-
-.approve {
-  background: linear-gradient(135deg, #16a34a, #22c55e);
-}
-
-.reject {
-  background: linear-gradient(135deg, #dc2626, #ef4444);
-}
-
-.loading {
-  text-align: center;
-  margin-top: 10px;
-  font-size: 14px;
+.small {
+  font-size: 13px;
+  color: #555;
 }
 </style>
 </head>
@@ -86,16 +46,18 @@ button {
 <body>
 
 <div class="container">
-  <h2>📋 งานรออนุมัติ</h2>
-
-  <div id="list" class="loading">กำลังโหลด...</div>
+  <h2>📋 รายการงาน</h2>
+  <div id="list">กำลังโหลด...</div>
 </div>
 
 <script>
-
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec";
 const LIFF_ID = "2009765392-O6mTRc1m";
-const allowedUsers = ["U895d547fe4e9879d2c3fc07d550d83ec"];
+
+// 🔥 ใส่ userId ที่อนุญาต
+const allowedUsers = [
+  "U895d547fe4e9879d2c3fc07d550d83ec"
+];
 
 async function init() {
   await liff.init({ liffId: LIFF_ID });
@@ -107,8 +69,9 @@ async function init() {
 
   const profile = await liff.getProfile();
 
+  // ❌ ไม่มีสิทธิ์ = หน้าว่าง
   if (!allowedUsers.includes(profile.userId)) {
-    document.body.innerHTML = "❌ คุณไม่มีสิทธิ์ใช้งาน";
+    document.body.innerHTML = "";
     return;
   }
 
@@ -116,78 +79,37 @@ async function init() {
 }
 
 async function loadJobs() {
-  try {
-    const res = await fetch(GAS_URL + "?mode=getPending");
-    const text = await res.text();
-    const jobs = JSON.parse(text);
+  const res = await fetch(GAS_URL + "?mode=getPending");
+  const jobs = await res.json();
 
-    const list = document.getElementById("list");
-    list.innerHTML = "";
+  const list = document.getElementById("list");
+  list.innerHTML = "";
 
-    if (jobs.length === 0) {
-      list.innerHTML = "ไม่มีงานรออนุมัติ";
-      return;
-    }
-
-    jobs.forEach(job => {
-      const div = document.createElement("div");
-      div.className = "card";
-
-      div.innerHTML = `
-        <div class="job-title">🆔 ${job.jobId}</div>
-
-        <div class="job-detail">📌 ${job.description}</div>
-        <div class="job-detail">⚙️ ${job.action} / ${job.type}</div>
-        <div class="job-detail">👤 ${job.contact}</div>
-        <div class="job-detail">📍 ${job.area} (${job.location})</div>
-        <div class="job-detail">📅 ${job.dueDate}</div>
-        <div class="job-detail">📊 ${job.status}</div>
-
-        <div class="btn-group">
-          <button class="approve" onclick="approve('${job.jobId}')">Approve</button>
-          <button class="reject" onclick="reject('${job.jobId}')">Reject</button>
-        </div>
-      `;
-
-      list.appendChild(div);
-    });
-
-  } catch (err) {
-    document.getElementById("list").innerHTML = "❌ โหลดข้อมูลไม่ได้";
-    console.error(err);
+  if (jobs.length === 0) {
+    list.innerHTML = "ไม่มีงาน";
+    return;
   }
-}
 
-async function approve(jobId) {
-  await fetch(GAS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      jobId: jobId,
-      action: "Approved"
-    })
+  jobs.forEach(job => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.onclick = () => {
+      window.location.href = "detail.html?jobId=" + job.jobId;
+    };
+
+    div.innerHTML = `
+      <div class="title">🆔 ${job.jobId}</div>
+      <div class="small">${job.action} / ${job.type}</div>
+      <div>${job.description}</div>
+      <div class="small">📅 ${job.dueDate}</div>
+    `;
+
+    list.appendChild(div);
   });
-
-  alert("✅ อนุมัติแล้ว");
-  loadJobs();
-}
-
-async function reject(jobId) {
-  await fetch(GAS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({
-      jobId: jobId,
-      action: "Rejected"
-    })
-  });
-
-  alert("❌ ไม่อนุมัติ");
-  loadJobs();
 }
 
 init();
-
 </script>
 
 </body>
