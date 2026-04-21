@@ -3,50 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <title>อนุมัติงาน</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
 body {
-  font-family: sans-serif;
+  margin: 0;
+  font-family: 'Prompt', sans-serif;
+  background: linear-gradient(135deg, #dbeafe, #fef3c7);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 420px;
   padding: 16px;
 }
 
 .card {
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 12px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
   margin-bottom: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #1e40af;
+  margin-bottom: 20px;
+}
+
+.job-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.job-detail {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.btn-group {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
 }
 
 button {
-  padding: 8px 12px;
-  margin-right: 8px;
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
   border: none;
-  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Prompt', sans-serif;
   color: white;
 }
 
-.approve { background: green; }
-.reject { background: red; }
+.approve {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+
+.reject {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+.loading {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>📋 งานรออนุมัติ</h2>
+<div class="container">
+  <h2>📋 งานรออนุมัติ</h2>
 
-<div id="list">กำลังโหลด...</div>
+  <div id="list" class="loading">กำลังโหลด...</div>
+</div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec";
 
-// 🔥 ใส่ userId ที่อนุญาต
-const allowedUsers = [
-  "U895d547fe4e9879d2c3fc07d550d83ec"
-];
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec";
+const LIFF_ID = "2009765392-O6mTRc1m";
+const allowedUsers = ["U895d547fe4e9879d2c3fc07d550d83ec"];
 
 async function init() {
-  await liff.init({ liffId: "2009765392-O6mTRc1m" });
+  await liff.init({ liffId: LIFF_ID });
 
   if (!liff.isLoggedIn()) {
     liff.login();
@@ -55,7 +107,6 @@ async function init() {
 
   const profile = await liff.getProfile();
 
-  // 🔥 เช็คสิทธิ์
   if (!allowedUsers.includes(profile.userId)) {
     document.body.innerHTML = "❌ คุณไม่มีสิทธิ์ใช้งาน";
     return;
@@ -65,40 +116,50 @@ async function init() {
 }
 
 async function loadJobs() {
-  const res = await fetch(https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec + "?mode=getPending");
-  const jobs = await res.json();
+  try {
+    const res = await fetch(GAS_URL + "?mode=getPending");
+    const text = await res.text();
+    const jobs = JSON.parse(text);
 
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+    const list = document.getElementById("list");
+    list.innerHTML = "";
 
-  if (jobs.length === 0) {
-    list.innerHTML = "ไม่มีงานรออนุมัติ";
-    return;
+    if (jobs.length === 0) {
+      list.innerHTML = "ไม่มีงานรออนุมัติ";
+      return;
+    }
+
+    jobs.forEach(job => {
+      const div = document.createElement("div");
+      div.className = "card";
+
+      div.innerHTML = `
+        <div class="job-title">🆔 ${job.jobId}</div>
+
+        <div class="job-detail">📌 ${job.description}</div>
+        <div class="job-detail">⚙️ ${job.action} / ${job.type}</div>
+        <div class="job-detail">👤 ${job.contact}</div>
+        <div class="job-detail">📍 ${job.area} (${job.location})</div>
+        <div class="job-detail">📅 ${job.dueDate}</div>
+        <div class="job-detail">📊 ${job.status}</div>
+
+        <div class="btn-group">
+          <button class="approve" onclick="approve('${job.jobId}')">Approve</button>
+          <button class="reject" onclick="reject('${job.jobId}')">Reject</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+
+  } catch (err) {
+    document.getElementById("list").innerHTML = "❌ โหลดข้อมูลไม่ได้";
+    console.error(err);
   }
-
-  jobs.forEach(job => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    div.innerHTML = `
-      <b>🆔 ${job.jobId}</b><br>
-      📌 ${job.description}<br>
-      ⚙️ ${job.action} / ${job.type}<br>
-      👤 ${job.contact}<br>
-      📍 ${job.area} (${job.location})<br>
-      📅 ${job.dueDate}<br>
-      📊 ${job.status}<br><br>
-
-      <button class="approve" onclick="approve('${job.jobId}')">✅ Approve</button>
-      <button class="reject" onclick="reject('${job.jobId}')">❌ Reject</button>
-    `;
-
-    list.appendChild(div);
-  });
 }
 
 async function approve(jobId) {
-  await fetch(https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec, {
+  await fetch(GAS_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({
@@ -107,12 +168,12 @@ async function approve(jobId) {
     })
   });
 
-  alert("อนุมัติแล้ว");
+  alert("✅ อนุมัติแล้ว");
   loadJobs();
 }
 
 async function reject(jobId) {
-  await fetch(https://script.google.com/macros/s/AKfycbwkz5CYyKDZD56rjjQxZp0G2T-P3Cp9J2BRABI2DLSr4mdv7HDItLueBe6lzZgfop3I/exec, {
+  await fetch(GAS_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({
@@ -121,11 +182,12 @@ async function reject(jobId) {
     })
   });
 
-  alert("ไม่อนุมัติ");
+  alert("❌ ไม่อนุมัติ");
   loadJobs();
 }
 
 init();
+
 </script>
 
 </body>
