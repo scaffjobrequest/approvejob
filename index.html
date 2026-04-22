@@ -102,7 +102,7 @@ async function loadJobs() {
       <div class="title">🆔 ${job.jobId}</div>
       <div class="small">${job.action} ${job.type} (${job.location})</div>
       <div>${job.description} - ${job.area}</div>
-      <div class="small">📅 ${formatDate(job.dueDate)}</div>
+      <div class="small">📅 Due Date: ${formatDate(job.dueDate)}</div>
     `;
 
     list.appendChild(div);
