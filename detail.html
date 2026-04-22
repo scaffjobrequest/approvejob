@@ -41,22 +41,14 @@ button {
   transition: 0.2s;
 }
 
-/* ✅ Approve */
-.approve {
-  background: #22c55e;
-}
+.approve { background: #22c55e; }
+.approve:active { background: #16a34a; }
 
-.approve:active {
-  background: #16a34a;
-}
+.reject { background: #ef4444; }
+.reject:active { background: #dc2626; }
 
-/* ❌ Reject */
-.reject {
-  background: #ef4444;
-}
-
-.reject:active {
-  background: #dc2626;
+button:disabled {
+  opacity: 0.6;
 }
 </style>
 </head>
@@ -100,10 +92,8 @@ async function loadDetail() {
   const jobs = await res.json();
 
   const job = jobs.find(j => String(j.jobId) === String(jobId));
-
   const div = document.getElementById("detail");
 
-  // 🔥 กันหน้าขาว
   if (!job) {
     div.innerHTML = "❌ ไม่พบข้อมูลงาน";
     return;
@@ -111,13 +101,13 @@ async function loadDetail() {
 
   div.innerHTML = `
     <h3>🆔 ${job.jobId}</h3>
-    <p>${job.action} ${job.type}</p>
+    <p>${job.action} / ${job.type}</p>
     <p>${job.description} (${job.location})</p>
-    <p>Area: ${job.area} </p>
+    <p>📍 Area: ${job.area}</p>
     <p>📅 ${formatDate(job.dueDate)}</p>
 
-    <button class="approve" onclick="approve()">Approve</button>
-    <button class="reject" onclick="reject()">Reject</button>
+    <button id="btnApprove" class="approve" onclick="updateStatus('Approved')">Approve</button>
+    <button id="btnReject" class="reject" onclick="updateStatus('Rejected')">Reject</button>
   `;
 }
 
@@ -127,26 +117,24 @@ function formatDate(dateStr) {
   return d.toLocaleDateString("th-TH");
 }
 
-async function approve() {
+async function updateStatus(action) {
+  const btnA = document.getElementById("btnApprove");
+  const btnR = document.getElementById("btnReject");
+
+  // 🔥 disable ปุ่ม
+  btnA.disabled = true;
+  btnR.disabled = true;
+
   await fetch(GAS_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({ jobId, action: "Approved" })
+    body: JSON.stringify({ jobId, action })
   });
 
-  alert("อนุมัติแล้ว");
-  window.location.href = "approve.html";
-}
+  alert(action === "Approved" ? "อนุมัติแล้ว" : "ไม่อนุมัติ");
 
-async function reject() {
-  await fetch(GAS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({ jobId, action: "Rejected" })
-  });
-
-  alert("ไม่อนุมัติ");
-  window.location.href = "approve.html";
+  // ✅ กลับหน้ารายการ (ไม่ 404)
+  window.location.replace("approve.html");
 }
 
 init();
